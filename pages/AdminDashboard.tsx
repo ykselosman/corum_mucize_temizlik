@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Check, X, Clock, MapPin, Phone, Search, Lock, LogOut, Trash2, Plus, Sparkles, Image as ImageIcon, Mail, MessageSquare, Users, ExternalLink, RefreshCw, Pencil } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, X, Clock, MapPin, Phone, Search, Lock, LogOut, Trash2, Plus, Sparkles, Image as ImageIcon, Mail, MessageSquare, Users, ExternalLink, RefreshCw, Pencil, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useData } from '../context/AppointmentContext';
 import { iconOptions, getIconComponent } from '../utils/iconMapper';
 
@@ -7,83 +7,56 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-// Helper to convert Google Drive share links to direct image links
-const convertDriveLink = (url: string) => {
-    // Regex to find File ID
-    const driveRegex = /\/d\/([-a-zA-Z0-9_]+)|\?id=([-a-zA-Z0-9_]+)/;
-    const match = url.match(driveRegex);
-    
-    if (match) {
-        const id = match[1] || match[2];
-        // Returns a direct link that works in <img> tags
-        return `https://lh3.googleusercontent.com/d/${id}`;
-    }
-    return url;
-};
-
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
-  const { appointments, services, messages, updateStatus, deleteAppointment, addService, updateService, deleteService, deleteMessage, getStats, loading } = useData();
-  const [activeTab, setActiveTab] = useState<'appointments' | 'services' | 'messages' | 'customers'>('appointments');
+  const { 
+    appointments, 
+    services, 
+    messages, 
+    updateStatus, 
+    deleteAppointment, 
+    addService, 
+    updateService, 
+    deleteService, 
+    deleteMessage, 
+    getStats, 
+    loading 
+  } = useData();
+
+  const [activeTab, setActiveTab] = useState<'appointments' | 'calendar' | 'services' | 'messages' | 'customers'>('appointments');
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // New Service Form State
-  const [isAddingService, setIsAddingService] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  
-  const [newService, setNewService] = useState({
+  // Service Management States
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [serviceFormData, setServiceFormData] = useState({
     title: '',
     description: '',
     icon: 'Sparkles',
-    image: 'https://picsum.photos/seed/clean/800/600',
+    image: '',
     basePrice: 0
   });
 
+  // Calendar State
+  const [currentDate, setCurrentDate] = useState(new Date());
+
   const stats = getStats();
 
-  // --- Logic for Customers Tab ---
-  // Aggregate unique customers based on phone number
-  const customers = Object.values(appointments.reduce((acc, curr) => {
-    // Normalize phone number (simple cleanup)
-    const cleanPhone = curr.customerPhone.replace(/\s/g, '');
-    
-    if (!acc[cleanPhone]) {
-        acc[cleanPhone] = {
-            name: curr.customerName,
-            phone: curr.customerPhone,
-            totalVisits: 0,
-            totalSpent: 0,
-            lastVisit: curr.createdAt
-        };
-    }
-    
-    acc[cleanPhone].totalVisits += 1;
-    // Only add to spent if not rejected
-    if (curr.status === 'completed' || curr.status === 'approved') {
-        acc[cleanPhone].totalSpent += (curr.priceEstimate || 0);
-    }
-    
-    // Check if this appointment is more recent
-    if (new Date(curr.createdAt) > new Date(acc[cleanPhone].lastVisit)) {
-        acc[cleanPhone].lastVisit = curr.createdAt;
-        acc[cleanPhone].name = curr.customerName; // Update name to most recent used
-    }
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+  
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
 
-    return acc;
-  }, {} as Record<string, { name: string, phone: string, totalVisits: number, totalSpent: number, lastVisit: string }>));
-
-  // Filter Logic
   const filteredAppointments = appointments.filter(apt => {
     const matchesFilter = filter === 'all' || apt.status === filter;
     const matchesSearch = apt.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          apt.serviceName.toLowerCase().includes(searchTerm.toLowerCase());
+                         apt.customerPhone.includes(searchTerm) ||
+                         apt.serviceName.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
-
-  const filteredCustomers = customers.filter(c => 
-     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     c.phone.includes(searchTerm)
-  );
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -105,523 +78,408 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
-  const handleAddService = async (e: React.FormEvent) => {
-      e.preventDefault();
-      // Ensure the link is converted before saving
-      const finalService = {
-          ...newService,
-          image: convertDriveLink(newService.image)
-      };
-
-      if (editingId) {
-          await updateService(editingId, finalService);
-      } else {
-          await addService(finalService);
-      }
-      
-      setIsAddingService(false);
-      setEditingId(null);
-      setNewService({
-        title: '',
-        description: '',
-        icon: 'Sparkles',
-        image: 'https://picsum.photos/seed/clean/800/600',
-        basePrice: 0
-      });
+  const openAddService = () => {
+    setEditingServiceId(null);
+    setServiceFormData({ title: '', description: '', icon: 'Sparkles', image: '', basePrice: 0 });
+    setIsServiceModalOpen(true);
   };
 
-  const handleEditClick = (service: any) => {
-      setEditingId(service.id);
-      setNewService({
-          title: service.title,
-          description: service.description,
-          icon: service.icon,
-          image: service.image,
-          basePrice: service.basePrice
-      });
-      setIsAddingService(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const openEditService = (s: any) => {
+    setEditingServiceId(s.id);
+    setServiceFormData({ title: s.title, description: s.description, icon: s.icon, image: s.image, basePrice: s.basePrice });
+    setIsServiceModalOpen(true);
   };
 
-  const cancelEdit = () => {
-      setIsAddingService(false);
-      setEditingId(null);
-      setNewService({
-        title: '',
-        description: '',
-        icon: 'Sparkles',
-        image: 'https://picsum.photos/seed/clean/800/600',
-        basePrice: 0
-      });
+  const handleServiceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingServiceId) {
+        await updateService(editingServiceId, serviceFormData);
+    } else {
+        await addService(serviceFormData);
+    }
+    setIsServiceModalOpen(false);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
+  const renderCalendar = () => {
+    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    
+    const calendarDays = [];
+    // Adjust for Monday start if preferred, but keeping Sunday for standard 0-6 JS getDay()
+    for (let i = 0; i < firstDay; i++) calendarDays.push(null);
+    for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Admin Header */}
-      <header className="bg-gray-900 text-white px-6 py-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-            <div className="bg-brand-500 p-2 rounded-lg">
-                <Lock size={20} />
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fade-in overflow-hidden">
+            <div className="flex justify-between items-center mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                    {currentDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' })}
+                </h2>
+                <div className="flex gap-3">
+                    <button 
+                      onClick={handlePrevMonth} 
+                      className="p-3 bg-white hover:bg-brand-50 text-gray-700 hover:text-brand-600 border border-gray-200 rounded-xl transition-all shadow-sm active:scale-95"
+                      title="Önceki Ay"
+                    >
+                      <ChevronLeft size={24} strokeWidth={2.5} />
+                    </button>
+                    <button 
+                      onClick={handleNextMonth} 
+                      className="p-3 bg-white hover:bg-brand-50 text-gray-700 hover:text-brand-600 border border-gray-200 rounded-xl transition-all shadow-sm active:scale-95"
+                      title="Sonraki Ay"
+                    >
+                      <ChevronRight size={24} strokeWidth={2.5} />
+                    </button>
+                </div>
             </div>
-            <div>
-                <h1 className="font-bold text-lg leading-none">Yönetici Paneli</h1>
-                <p className="text-xs text-gray-400">Mucize Temizlik Operasyon</p>
+            <div className="grid grid-cols-7 gap-2">
+                {dayNames.map(name => <div key={name} className="text-center text-xs font-bold text-gray-400 uppercase pb-4">{name}</div>)}
+                {calendarDays.map((day, idx) => {
+                    if (day === null) return <div key={idx} className="h-24 md:h-32 bg-gray-50/50 rounded-lg"></div>;
+                    
+                    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayAppointments = appointments.filter(a => a.date === dateStr);
+
+                    return (
+                        <div key={idx} className={`h-24 md:h-32 border border-gray-100 rounded-xl p-2 transition hover:shadow-md relative group overflow-hidden ${dayAppointments.length > 0 ? 'bg-brand-50/20' : 'bg-white'}`}>
+                            <span className="text-sm font-bold text-gray-400 absolute top-2 right-2">{day}</span>
+                            <div className="mt-6 space-y-1">
+                                {dayAppointments.slice(0, 3).map(a => (
+                                    <div key={a.id} className={`text-[9px] md:text-[10px] p-1 rounded font-bold truncate border ${getStatusColor(a.status)}`}>
+                                        {a.customerName.split(' ')[0]} - {a.serviceName}
+                                    </div>
+                                ))}
+                                {dayAppointments.length > 3 && <div className="text-[9px] text-gray-500 font-bold px-1">+{dayAppointments.length - 3} daha...</div>}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
-        <button 
-            onClick={onLogout}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition"
-        >
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-gray-900 text-white px-6 py-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+            <div className="bg-brand-500 p-2 rounded-lg text-white"><Lock size={20} /></div>
+            <div>
+                <h1 className="font-bold text-lg leading-none">Mucize Temizlik</h1>
+                <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Admin Yönetim Paneli</p>
+            </div>
+        </div>
+        <button onClick={onLogout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition bg-white/10 px-4 py-2 rounded-lg">
             <LogOut size={16} /> Çıkış Yap
         </button>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <div className="flex space-x-2 md:space-x-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-            <button 
-                onClick={() => setActiveTab('appointments')}
-                className={`px-4 md:px-6 py-3 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'appointments' ? 'bg-white text-brand-600 shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            >
-                <Calendar size={18} />
-                Randevular
-            </button>
-            <button 
-                onClick={() => setActiveTab('customers')}
-                className={`px-4 md:px-6 py-3 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'customers' ? 'bg-white text-brand-600 shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            >
-                <Users size={18} />
-                Müşteriler
-            </button>
-            <button 
-                onClick={() => setActiveTab('services')}
-                className={`px-4 md:px-6 py-3 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'services' ? 'bg-white text-brand-600 shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            >
-                <Sparkles size={18} />
-                Hizmetler
-            </button>
-            <button 
-                onClick={() => setActiveTab('messages')}
-                className={`px-4 md:px-6 py-3 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'messages' ? 'bg-white text-brand-600 shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            >
-                <MessageSquare size={18} />
-                Mesajlar
-                {messages.length > 0 && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{messages.length}</span>
-                )}
-            </button>
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+                { label: 'Toplam Randevu', value: stats.total, icon: <CalendarIcon />, color: 'text-brand-600', bg: 'bg-brand-50' },
+                { label: 'Bekleyenler', value: stats.pending, icon: <Clock />, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+                { label: 'Onaylananlar', value: stats.approved, icon: <Check />, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Yeni Mesajlar', value: stats.messageCount, icon: <Mail />, color: 'text-purple-600', bg: 'bg-purple-50' }
+            ].map((stat, i) => (
+                <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>{stat.icon}</div>
+                        <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
+                    </div>
+                    <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
+                </div>
+            ))}
         </div>
 
-        {activeTab === 'appointments' && (
-            <>
-                {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                        <p className="text-gray-500 text-sm">Toplam Randevu</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                        <p className="text-gray-500 text-sm">Bekleyen</p>
-                        <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                        <p className="text-gray-500 text-sm">Onaylanan</p>
-                        <p className="text-2xl font-bold text-blue-600">{stats.approved}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                        <p className="text-gray-500 text-sm">Toplam Ciro (Tahmini)</p>
-                        <p className="text-2xl font-bold text-green-600">₺{stats.earnings}</p>
-                    </div>
-                </div>
+        {/* Navigation Tabs */}
+        <div className="flex space-x-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+                { id: 'appointments', label: 'Randevular', icon: <CalendarIcon size={18}/> },
+                { id: 'calendar', label: 'Takvim Görünümü', icon: <RefreshCw size={18}/> },
+                { id: 'customers', label: 'Müşteriler', icon: <Users size={18}/> },
+                { id: 'services', label: 'Hizmetler', icon: <Sparkles size={18}/> },
+                { id: 'messages', label: 'Mesajlar', icon: <MessageSquare size={18}/> },
+            ].map(tab => (
+                <button 
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)} 
+                    className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id ? 'bg-brand-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'}`}
+                >
+                    {tab.icon} {tab.label}
+                </button>
+            ))}
+        </div>
 
-                {/* Filters and Search */}
-                <div className="bg-white rounded-t-xl border-b border-gray-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                        {['all', 'pending', 'approved', 'completed'].map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                {f === 'all' ? 'Tümü' : getStatusLabel(f)}
+        {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin text-brand-600 mb-4"><RefreshCw size={40} /></div>
+                <p className="text-gray-500 font-medium">Veriler yükleniyor...</p>
+            </div>
+        ) : (
+            <>
+                {activeTab === 'appointments' && (
+                    <div className="space-y-6 animate-fade-in">
+                        {/* Search and Filters */}
+                        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                            <div className="relative w-full md:w-96">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Müşteri, telefon veya hizmet ara..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                                />
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                                {['all', 'pending', 'approved', 'completed', 'rejected'].map(f => (
+                                    <button 
+                                        key={f}
+                                        onClick={() => setFilter(f)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${filter === f ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        {f === 'all' ? 'Hepsi' : getStatusLabel(f)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Appointments List */}
+                        <div className="space-y-4">
+                            {filteredAppointments.length === 0 ? (
+                                <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">
+                                    Randevu bulunamadı.
+                                </div>
+                            ) : filteredAppointments.map(apt => (
+                                <div key={apt.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:shadow-md transition-shadow">
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(apt.status)}`}>
+                                                {getStatusLabel(apt.status).toUpperCase()}
+                                            </span>
+                                            <h3 className="text-xl font-bold text-gray-900">{apt.customerName}</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-sm">
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <Sparkles size={16} className="text-brand-500" /> <span className="font-bold">{apt.serviceName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <CalendarIcon size={16} className="text-brand-500" /> {apt.date}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <Clock size={16} className="text-brand-500" /> {apt.timeSlot}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <Phone size={16} className="text-brand-500" /> {apt.customerPhone}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-gray-600 lg:col-span-2">
+                                                <MapPin size={16} className="text-brand-500" /> {apt.address}
+                                            </div>
+                                        </div>
+                                        {apt.notes && (
+                                            <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-500 italic">
+                                                <strong>Not:</strong> {apt.notes}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 md:flex-col lg:flex-row">
+                                        {apt.status === 'pending' && (
+                                            <button onClick={() => updateStatus(apt.id, 'approved')} className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition">Onayla</button>
+                                        )}
+                                        {apt.status === 'approved' && (
+                                            <button onClick={() => updateStatus(apt.id, 'completed')} className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition">Tamamlandı</button>
+                                        )}
+                                        {apt.status !== 'rejected' && apt.status !== 'completed' && (
+                                            <button onClick={() => updateStatus(apt.id, 'rejected')} className="px-4 py-2 border border-red-200 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition">İptal Et</button>
+                                        )}
+                                        <button onClick={() => deleteAppointment(apt.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Sil">
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'calendar' && renderCalendar()}
+
+                {activeTab === 'customers' && (
+                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden animate-fade-in">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4">Müşteri</th>
+                                    <th className="px-6 py-4">Telefon</th>
+                                    <th className="px-6 py-4">Toplam Randevu</th>
+                                    <th className="px-6 py-4 text-right">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {Array.from(new Set(appointments.map(a => a.customerPhone))).map(phone => {
+                                    const customerApts = appointments.filter(a => a.customerPhone === phone);
+                                    const name = customerApts[0].customerName;
+                                    return (
+                                        <tr key={phone} className="hover:bg-gray-50 transition">
+                                            <td className="px-6 py-4 font-bold text-gray-900">{name}</td>
+                                            <td className="px-6 py-4 text-gray-600">{phone}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="bg-brand-50 text-brand-600 px-3 py-1 rounded-full text-xs font-bold">
+                                                    {customerApts.length} Hizmet
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <a href={`tel:${phone}`} className="text-brand-600 hover:underline font-bold text-sm">Ara</a>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {activeTab === 'services' && (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="flex justify-end">
+                            <button onClick={openAddService} className="bg-brand-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-brand-700 transition shadow-lg">
+                                <Plus size={20} /> Yeni Hizmet Ekle
                             </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {services.map(s => (
+                                <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                                    <img src={s.image} className="h-40 w-full object-cover" alt={s.title} />
+                                    <div className="p-6 flex-1">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h3 className="font-bold text-xl">{s.title}</h3>
+                                            <div className="bg-brand-50 p-2 rounded-lg text-brand-600">{getIconComponent(s.icon)}</div>
+                                        </div>
+                                        <p className="text-gray-500 text-sm line-clamp-3 mb-6">{s.description}</p>
+                                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                                            <span className="font-bold text-brand-600">₺{s.basePrice}</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => openEditService(s)} className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                                                    <Pencil size={20} />
+                                                </button>
+                                                <button onClick={() => deleteService(s.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'messages' && (
+                    <div className="space-y-4 animate-fade-in">
+                        {messages.length === 0 ? (
+                            <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">
+                                Mesaj bulunamadı.
+                            </div>
+                        ) : messages.map(msg => (
+                            <div key={msg.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-gray-900">{msg.name}</h3>
+                                        <div className="flex gap-4 text-sm text-gray-500 mt-1">
+                                            <span className="flex items-center gap-1"><Mail size={14}/> {msg.email}</span>
+                                            <span className="flex items-center gap-1"><Phone size={14}/> {msg.phone}</span>
+                                            <span className="flex items-center gap-1"><Clock size={14}/> {new Date(msg.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => deleteMessage(msg.id)} className="text-gray-400 hover:text-red-600 p-2 rounded-lg transition">
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-xl text-gray-700 text-sm leading-relaxed border border-gray-100">
+                                    {msg.message}
+                                </div>
+                            </div>
                         ))}
                     </div>
-                    <div className="relative w-full md:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder="İsim veya Hizmet ara..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm"
-                        />
-                    </div>
-                </div>
-
-                {/* Appointments List */}
-                <div className="bg-white rounded-b-xl shadow-sm border border-t-0 border-gray-200 overflow-hidden">
-                    {filteredAppointments.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">
-                            <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
-                            <p>Randevu bulunamadı.</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {filteredAppointments.map((apt) => (
-                                <div key={apt.id} className="p-6 hover:bg-gray-50 transition-colors">
-                                    <div className="flex flex-col md:flex-row justify-between gap-6">
-                                        {/* Info Section */}
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusColor(apt.status)} uppercase`}>
-                                                    {getStatusLabel(apt.status)}
-                                                </span>
-                                                <span className="text-gray-400 text-xs">#{apt.id.slice(0, 8)}</span>
-                                                <span className="text-gray-400 text-xs">• {new Date(apt.createdAt).toLocaleDateString()}</span>
-                                            </div>
-                                            <h3 className="text-lg font-bold text-gray-900">{apt.customerName}</h3>
-                                            <div className="mt-2 space-y-1">
-                                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <span className="w-5 text-center">🧹</span> <span className="font-medium text-brand-600">{apt.serviceName}</span>
-                                                    <span className="text-gray-400 text-xs">(₺{apt.priceEstimate})</span>
-                                                </p>
-                                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <Calendar size={16} className="text-gray-400" /> {apt.date} • {apt.timeSlot}
-                                                </p>
-                                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <Phone size={16} className="text-gray-400" /> <a href={`tel:${apt.customerPhone}`} className="hover:underline">{apt.customerPhone}</a>
-                                                </p>
-                                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <MapPin size={16} className="text-gray-400" /> {apt.address}
-                                                </p>
-                                                {apt.notes && (
-                                                    <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg">
-                                                        <span className="font-bold">Not:</span> {apt.notes}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Actions Section */}
-                                        <div className="flex md:flex-col justify-end gap-2 min-w-[140px]">
-                                            {apt.status === 'pending' && (
-                                                <>
-                                                    <button 
-                                                        onClick={() => updateStatus(apt.id, 'approved')}
-                                                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
-                                                    >
-                                                        <Check size={16} /> Onayla
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => updateStatus(apt.id, 'rejected')}
-                                                        className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition"
-                                                    >
-                                                        <X size={16} /> Reddet
-                                                    </button>
-                                                </>
-                                            )}
-                                            {apt.status === 'approved' && (
-                                                <button 
-                                                    onClick={() => updateStatus(apt.id, 'completed')}
-                                                    className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition"
-                                                >
-                                                    <Check size={16} /> Tamamlandı
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={() => {
-                                                    if(window.confirm('Bu randevuyu silmek istediğinize emin misiniz?')) {
-                                                        deleteAppointment(apt.id);
-                                                    }
-                                                }}
-                                                className="flex items-center justify-center gap-2 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg font-medium hover:bg-red-50 hover:text-red-600 transition"
-                                                title="Sil"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                )}
             </>
         )}
+      </main>
 
-        {activeTab === 'customers' && (
-             <div className="space-y-6">
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-800">Müşteri Listesi</h2>
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+      {/* Service Add/Edit Modal */}
+      {isServiceModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-slide-up">
+                <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 className="text-2xl font-bold text-gray-900">{editingServiceId ? 'Hizmeti Düzenle' : 'Yeni Hizmet Ekle'}</h3>
+                    <button onClick={() => setIsServiceModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24}/></button>
+                </div>
+                <form onSubmit={handleServiceSubmit} className="p-8 space-y-5">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Hizmet Adı</label>
                         <input 
+                            required
                             type="text" 
-                            placeholder="Müşteri ara..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm"
+                            value={serviceFormData.title}
+                            onChange={e => setServiceFormData({...serviceFormData, title: e.target.value})}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                            placeholder="Örn: Ofis Temizliği"
                         />
                     </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Müşteri</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">İletişim</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-center">Toplam Hizmet</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Toplam Harcama</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Son Görülme</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filteredCustomers.map((cust, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50 transition">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{cust.name}</td>
-                                    <td className="px-6 py-4 text-gray-600">
-                                        <a href={`tel:${cust.phone}`} className="hover:text-brand-600 hover:underline">
-                                            {cust.phone}
-                                        </a>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {cust.totalVisits}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-bold text-green-600">
-                                        ₺{cust.totalSpent.toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-4 text-right text-gray-500 text-sm">
-                                        {new Date(cust.lastVisit).toLocaleDateString()}
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredCustomers.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                        Kayıt bulunamadı.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-             </div>
-        )}
-
-        {activeTab === 'services' && (
-             <div className="space-y-6">
-                 {/* Header & Add Button */}
-                 <div className="flex justify-between items-center">
-                     <h2 className="text-2xl font-bold text-gray-800">Hizmet Listesi</h2>
-                     <button 
-                        onClick={() => {
-                            setIsAddingService(!isAddingService);
-                            if (isAddingService && editingId) {
-                                cancelEdit();
-                            }
-                        }}
-                        className={`text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition ${isAddingService ? 'bg-gray-500 hover:bg-gray-600' : 'bg-brand-600 hover:bg-brand-700'}`}
-                     >
-                        {isAddingService ? <X size={20} /> : <Plus size={20} />}
-                        {isAddingService ? 'İptal' : 'Yeni Hizmet Ekle'}
-                     </button>
-                 </div>
-
-                 {/* Add/Edit Service Form */}
-                 {isAddingService && (
-                     <div className="bg-white p-6 rounded-xl shadow-md border border-brand-100 animate-slide-up">
-                         <h3 className="text-lg font-bold mb-4">{editingId ? 'Hizmeti Düzenle' : 'Yeni Hizmet Oluştur'}</h3>
-                         <form onSubmit={handleAddService} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="col-span-1 md:col-span-2">
-                                 <label className="block text-sm font-bold text-gray-700 mb-1">Hizmet Başlığı</label>
-                                 <input 
-                                    type="text" 
-                                    required 
-                                    value={newService.title}
-                                    onChange={(e) => setNewService({...newService, title: e.target.value})}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                                 />
-                             </div>
-                             <div className="col-span-1 md:col-span-2">
-                                 <label className="block text-sm font-bold text-gray-700 mb-1">Açıklama</label>
-                                 <textarea 
-                                    required 
-                                    rows={2}
-                                    value={newService.description}
-                                    onChange={(e) => setNewService({...newService, description: e.target.value})}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none resize-none"
-                                 />
-                             </div>
-                             <div>
-                                 <label className="block text-sm font-bold text-gray-700 mb-1">Fiyat (₺)</label>
-                                 <input 
-                                    type="number" 
-                                    required 
-                                    min="0"
-                                    value={newService.basePrice}
-                                    onChange={(e) => setNewService({...newService, basePrice: parseInt(e.target.value) || 0})}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                                 />
-                             </div>
-                             <div>
-                                 <label className="block text-sm font-bold text-gray-700 mb-1">İkon</label>
-                                 <select 
-                                    value={newService.icon}
-                                    onChange={(e) => setNewService({...newService, icon: e.target.value})}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                                 >
-                                     {iconOptions.map(icon => <option key={icon} value={icon}>{icon}</option>)}
-                                 </select>
-                             </div>
-                             <div className="col-span-1 md:col-span-2">
-                                 <label className="block text-sm font-bold text-gray-700 mb-1">Görsel URL veya Drive Linki</label>
-                                 <div className="flex gap-2">
-                                    <div className="flex-1">
-                                        <input 
-                                            type="url" 
-                                            required 
-                                            placeholder="https://drive.google.com/file/d/..."
-                                            value={newService.image}
-                                            onChange={(e) => setNewService({...newService, image: e.target.value})}
-                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                                        />
-                                        <p className="text-xs text-gray-400 mt-1">Google Drive klasörünüzdeki bir resmin "Bağlantıyı Paylaş" linkini yapıştırabilirsiniz.</p>
-                                    </div>
-                                    <div className="w-16 h-16 rounded overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
-                                        <img 
-                                            src={convertDriveLink(newService.image)} 
-                                            alt="Preview" 
-                                            className="w-full h-full object-cover" 
-                                            onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/100?text=Hata')} 
-                                        />
-                                    </div>
-                                 </div>
-                             </div>
-                             <div className="col-span-1 md:col-span-2 flex justify-end gap-2 mt-2">
-                                 <button 
-                                    type="button" 
-                                    onClick={cancelEdit}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                                 >
-                                     İptal
-                                 </button>
-                                 <button 
-                                    type="submit" 
-                                    className="px-6 py-2 bg-brand-600 text-white rounded-lg font-bold hover:bg-brand-700"
-                                 >
-                                     {editingId ? 'Değişiklikleri Kaydet' : 'Kaydet'}
-                                 </button>
-                             </div>
-                         </form>
-                     </div>
-                 )}
-
-                 {/* Services List */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                     {services.map((service) => (
-                         <div key={service.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col group relative">
-                             <div className="h-48 overflow-hidden relative">
-                                 <img src={convertDriveLink(service.image)} alt={service.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                                 <div className="absolute top-2 right-2 bg-white p-1.5 rounded-lg shadow-sm">
-                                     {getIconComponent(service.icon, "w-5 h-5 text-brand-600")}
-                                 </div>
-                             </div>
-                             <div className="p-5 flex-1 flex flex-col">
-                                 <div className="flex justify-between items-start mb-2">
-                                     <h3 className="font-bold text-gray-900 text-lg">{service.title}</h3>
-                                     <span className="bg-brand-50 text-brand-700 px-2 py-1 rounded text-sm font-bold">₺{service.basePrice}</span>
-                                 </div>
-                                 <p className="text-gray-500 text-sm mb-4 flex-1 line-clamp-3">{service.description}</p>
-                                 <div className="flex gap-2">
-                                     <button 
-                                        onClick={() => handleEditClick(service)}
-                                        className="flex-1 border border-blue-200 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2"
-                                     >
-                                         <Pencil size={16} /> Düzenle
-                                     </button>
-                                     <button 
-                                        onClick={() => {
-                                            if(window.confirm('Bu hizmeti silmek istediğinize emin misiniz?')) {
-                                                deleteService(service.id);
-                                            }
-                                        }}
-                                        className="flex-1 border border-red-200 text-red-600 py-2 rounded-lg hover:bg-red-50 transition flex items-center justify-center gap-2"
-                                     >
-                                         <Trash2 size={16} /> Sil
-                                     </button>
-                                 </div>
-                             </div>
-                         </div>
-                     ))}
-                 </div>
-             </div>
-        )}
-
-        {activeTab === 'messages' && (
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                     <h2 className="text-2xl font-bold text-gray-800">Gelen Kutusu</h2>
-                     <div className="text-gray-500 text-sm">
-                        Toplam <strong>{messages.length}</strong> mesaj
-                     </div>
-                 </div>
-
-                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {messages.length === 0 ? (
-                         <div className="p-12 text-center text-gray-500">
-                             <Mail size={48} className="mx-auto mb-4 text-gray-300" />
-                             <p>Henüz mesajınız yok.</p>
-                         </div>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {messages.map((msg) => (
-                                <div key={msg.id} className="p-6 hover:bg-gray-50 transition-colors">
-                                    <div className="flex flex-col md:flex-row gap-6">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-lg font-bold text-gray-900">{msg.name}</h3>
-                                                <span className="text-gray-400 text-xs">• {new Date(msg.createdAt).toLocaleDateString()} {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                                                <a href={`mailto:${msg.email}`} className="flex items-center gap-1 hover:text-brand-600">
-                                                    <Mail size={14} /> {msg.email}
-                                                </a>
-                                                <a href={`tel:${msg.phone}`} className="flex items-center gap-1 hover:text-brand-600">
-                                                    <Phone size={14} /> {msg.phone}
-                                                </a>
-                                            </div>
-                                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-700">
-                                                <p>{msg.message}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start">
-                                            <button 
-                                                onClick={() => {
-                                                    if(window.confirm('Bu mesajı silmek istediğinize emin misiniz?')) {
-                                                        deleteMessage(msg.id);
-                                                    }
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                                                title="Mesajı Sil"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Açıklama</label>
+                        <textarea 
+                            required
+                            rows={3}
+                            value={serviceFormData.description}
+                            onChange={e => setServiceFormData({...serviceFormData, description: e.target.value})}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+                            placeholder="Hizmet detaylarını yazın..."
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">İkon Seçimi</label>
+                            <select 
+                                value={serviceFormData.icon}
+                                onChange={e => setServiceFormData({...serviceFormData, icon: e.target.value})}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                            >
+                                {iconOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
                         </div>
-                    )}
-                 </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Başlangıç Fiyatı (₺)</label>
+                            <input 
+                                required
+                                type="number" 
+                                value={serviceFormData.basePrice}
+                                onChange={e => setServiceFormData({...serviceFormData, basePrice: Number(e.target.value)})}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Görsel URL (Unsplash önerilir)</label>
+                        <input 
+                            required
+                            type="text" 
+                            value={serviceFormData.image}
+                            onChange={e => setServiceFormData({...serviceFormData, image: e.target.value})}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                            placeholder="https://images.unsplash.com/..."
+                        />
+                    </div>
+                    <button type="submit" className="w-full bg-brand-600 text-white font-bold py-4 rounded-xl hover:bg-brand-700 transition shadow-lg shadow-brand-500/20">
+                        {editingServiceId ? 'Güncelle' : 'Kaydet'}
+                    </button>
+                </form>
             </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 };

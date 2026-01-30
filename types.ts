@@ -1,31 +1,32 @@
 import React from 'react';
 
-export type Page = 'home' | 'about' | 'services' | 'contact' | 'booking' | 'admin' | 'quote';
+export type Page = 'home' | 'about' | 'services' | 'contact' | 'booking' | 'admin' | 'quote' | 'service-detail' | 'blog';
 
 export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 
 export interface Appointment {
-  id: string; // UUID from Supabase
-  customerName: string; // mapped from customer_name
-  customerPhone: string; // mapped from customer_phone
-  serviceId: string; // mapped from service_id
-  serviceName: string; // mapped from service_name
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  serviceId: string;
+  serviceName: string;
   date: string;
-  timeSlot: string; // mapped from time_slot
+  timeSlot: string;
   address: string;
   status: BookingStatus;
   notes?: string;
-  priceEstimate?: number; // mapped from price_estimate
-  createdAt: string; // mapped from created_at
+  priceEstimate?: number;
+  createdAt: string;
 }
 
 export interface ServiceItem {
-  id: string; // UUID
+  id: string;
   title: string;
   description: string;
-  icon: string; // Store icon name as string
+  icon: string;
   image: string;
-  basePrice: number; // mapped from base_price
+  basePrice: number;
+  details?: string[]; // Added for detail page
 }
 
 export interface ContactMessage {
@@ -34,7 +35,7 @@ export interface ContactMessage {
   email: string;
   phone: string;
   message: string;
-  createdAt: string; // mapped from created_at
+  createdAt: string;
 }
 
 export interface Testimonial {
@@ -47,9 +48,18 @@ export interface Testimonial {
 
 export interface Review {
   id: string;
-  serviceId: string; // mapped from service_id
-  customerName: string; // mapped from customer_name
+  serviceId: string;
+  customerName: string;
   rating: number;
   comment: string;
-  createdAt: string; // mapped from created_at
+  createdAt: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+  author: string;
 }

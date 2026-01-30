@@ -8,17 +8,20 @@ import { Contact } from './pages/Contact';
 import { Booking } from './pages/Booking';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Quote } from './pages/Quote';
-import { Page } from './types';
-import { Lock } from 'lucide-react';
+import { ServiceDetail } from './pages/ServiceDetail';
+import { WhatsAppButton } from './components/WhatsAppButton';
+import { Page, ServiceItem } from './types';
+import { Lock, Sparkles } from 'lucide-react';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentPage]);
+  }, [currentPage, selectedService]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +33,14 @@ function App() {
     }
   };
 
+  const navigateToService = (service: ServiceItem) => {
+    setSelectedService(service);
+    setCurrentPage('service-detail');
+  };
+
   const renderAdminLogin = () => (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
             <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-600">
                     <Lock size={32} />
@@ -47,27 +55,24 @@ function App() {
                         placeholder="Şifre"
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500 outline-none"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                         autoFocus
                     />
                 </div>
                 <button 
                     type="submit"
-                    className="w-full bg-brand-600 text-white font-bold py-3 rounded-lg hover:bg-brand-700 transition"
+                    className="w-full bg-brand-600 text-white font-bold py-4 rounded-xl hover:bg-brand-700 transition shadow-lg shadow-brand-500/20"
                 >
                     Giriş Yap
                 </button>
                 <button 
                     type="button"
                     onClick={() => setCurrentPage('home')}
-                    className="w-full text-gray-500 text-sm hover:text-gray-800"
+                    className="w-full text-gray-500 text-sm hover:text-gray-800 font-medium"
                 >
                     Anasayfaya Dön
                 </button>
             </form>
-            <div className="mt-4 text-center text-xs text-gray-400">
-                İpucu: Şifre 'admin123'
-            </div>
         </div>
     </div>
   );
@@ -75,9 +80,9 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={setCurrentPage} />;
+        return <Home onNavigate={setCurrentPage} onServiceClick={navigateToService} />;
       case 'services':
-        return <Services onNavigate={setCurrentPage} />;
+        return <Services onNavigate={setCurrentPage} onServiceClick={navigateToService} />;
       case 'about':
         return <About onNavigate={setCurrentPage} />;
       case 'contact':
@@ -86,6 +91,12 @@ function App() {
         return <Booking />;
       case 'quote':
         return <Quote />;
+      case 'service-detail':
+        return selectedService ? (
+          <ServiceDetail service={selectedService} onNavigate={setCurrentPage} />
+        ) : (
+          <Home onNavigate={setCurrentPage} onServiceClick={navigateToService} />
+        );
       case 'admin':
         if (!isAdminLoggedIn) return renderAdminLogin();
         return <AdminDashboard 
@@ -95,11 +106,11 @@ function App() {
             }}
         />;
       default:
-        return <Home onNavigate={setCurrentPage} />;
+        return <Home onNavigate={setCurrentPage} onServiceClick={navigateToService} />;
     }
   };
 
-  // If Admin Dashboard is active, don't show Navbar/Footer
+  // Special full-screen layout for Admin
   if (currentPage === 'admin') {
     return renderPage();
   }
@@ -107,9 +118,10 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800 bg-gray-50">
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
-      <main className="flex-grow">
+      <main className={`flex-grow ${currentPage === 'home' || currentPage === 'service-detail' ? '' : 'pt-28'}`}>
         {renderPage()}
       </main>
+      <WhatsAppButton />
       <Footer onNavigate={setCurrentPage} />
     </div>
   );

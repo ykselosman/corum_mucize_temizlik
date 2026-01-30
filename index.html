@@ -3,33 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mucize Temizlik | Çorum</title>
+    <title>Mucize Temizlik | Çorum Profesyonel Temizlik Hizmetleri</title>
+    <meta name="description" content="Çorum'da ev, ofis, inşaat sonrası ve villa temizliğinde lider şirket. Mucize Temizlik ile profesyonel, güvenilir ve hijyenik çözümler." />
+    <meta name="keywords" content="Çorum temizlik, Çorum temizlik şirketi, ev temizliği Çorum, ofis temizliği Çorum, inşaat sonrası temizlik" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mucizetemizlik.com/" />
+    <meta property="og:title" content="Mucize Temizlik | Çorum'un Hijyen Markası" />
+    <meta property="og:description" content="Profesyonel ekip ve ekipmanlarla Çorum'un her noktasına mucizevi temizlik hizmeti." />
+    <meta property="og:image" content="https://lh3.googleusercontent.com/d/1FMJFWT4EK_A7E17lvg_3GJx4i41gRsWy" />
+
+    <!-- Schema.org for Google -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Mucize Temizlik Çorum",
+        "image": "https://lh3.googleusercontent.com/d/1FMJFWT4EK_A7E17lvg_3GJx4i41gRsWy",
+        "@id": "",
+        "url": "https://mucizetemizlik.com/",
+        "telephone": "05428237651",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Ulukavak Mah. Akpınar 8.Sk",
+          "addressLocality": "Çorum Merkez",
+          "addressRegion": "Çorum",
+          "postalCode": "19040",
+          "addressCountry": "TR"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 40.5580525,
+          "longitude": 34.9467667
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+          ],
+          "opens": "08:00",
+          "closes": "19:00"
+        }
+      }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
             colors: {
               brand: {
-                50: '#f0faff',
-                100: '#e0f4fe',
-                200: '#b9e6fe',
-                300: '#7cd4fd',
-                400: '#36bffa',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                800: '#075985',
-                900: '#0c4a6e',
+                50: '#f0faff', 100: '#e0f4fe', 200: '#b9e6fe', 300: '#7cd4fd', 400: '#36bffa',
+                500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e',
               },
-              teal: {
-                400: '#2dd4bf',
-                500: '#14b8a6',
-              }
+              teal: { 400: '#2dd4bf', 500: '#14b8a6' }
             },
             animation: {
               'float': 'float 6s ease-in-out infinite',
@@ -37,57 +73,27 @@
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'slide-up': 'slideUp 0.8s ease-out forwards',
               'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'reveal': 'reveal 4s infinite alternate',
             },
             keyframes: {
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-20px)' },
-              },
-              slideUp: {
-                '0%': { transform: 'translateY(50px)', opacity: '0' },
-                '100%': { transform: 'translateY(0)', opacity: '1' },
-              },
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              }
+              float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } },
+              slideUp: { '0%': { transform: 'translateY(50px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+              fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+              reveal: { '0%': { clipPath: 'inset(0 100% 0 0)' }, '100%': { clipPath: 'inset(0 0 0 0)' } }
             }
           }
         }
       }
     </script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      
-      /* Custom Classes */
-      .glass {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
-      
-      .glass-dark {
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .bubble {
-        position: absolute;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        z-index: 0;
-        pointer-events: none;
-      }
+      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+      html { scroll-behavior: smooth; }
+      .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+      .bubble { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1)); z-index: 0; pointer-events: none; }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #f1f1f1; }
+      ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
     </style>
   <script type="importmap">
 {
@@ -101,7 +107,7 @@
 }
 </script>
 </head>
-  <body class="overflow-x-hidden">
+  <body>
     <div id="root"></div>
   </body>
 </html>

@@ -31,8 +31,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
     setIsOpen(false);
   };
 
+  // Logic to determine if navbar should be prominent even when not scrolled
+  const isDetailHeader = currentPage === 'service-detail';
+  const showProminentNav = scrolled || isDetailHeader;
+
   return (
-    <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${scrolled ? 'glass shadow-md py-2' : 'bg-transparent py-4'}`}>
+    <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+      scrolled 
+        ? 'glass shadow-md py-2' 
+        : (isDetailHeader 
+            ? 'bg-white/60 backdrop-blur-md border-b border-white/20 py-3 shadow-sm' 
+            : 'bg-transparent py-4')
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           {/* Logo */}
@@ -40,12 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
             className="flex items-center cursor-pointer group"
             onClick={() => handleNavClick('home')}
           >
-            <div className={`p-2 rounded-xl mr-3 transition-colors ${scrolled ? 'bg-brand-600 text-white' : 'bg-white text-brand-600 shadow-lg'}`}>
+            <div className={`p-2 rounded-xl mr-3 transition-colors ${showProminentNav ? 'bg-brand-600 text-white shadow-sm' : 'bg-white text-brand-600 shadow-lg'}`}>
               <Sparkles size={24} className="animate-pulse-slow" />
             </div>
             <div className="flex flex-col">
-              <h1 className={`text-2xl font-extrabold leading-none tracking-tight ${scrolled ? 'text-gray-800' : 'text-brand-900'}`}>MUCİZE</h1>
-              <span className={`text-xs font-bold tracking-[0.2em] uppercase ${scrolled ? 'text-brand-600' : 'text-brand-700'}`}>Temizlik</span>
+              <h1 className={`text-2xl font-extrabold leading-none tracking-tight ${showProminentNav ? 'text-gray-800' : 'text-brand-900'}`}>MUCİZE</h1>
+              <span className={`text-xs font-bold tracking-[0.2em] uppercase ${showProminentNav ? 'text-brand-600' : 'text-brand-700'}`}>Temizlik</span>
             </div>
           </div>
 
@@ -58,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
                   currentPage === item.value
                     ? 'bg-brand-100 text-brand-700'
-                    : scrolled ? 'text-gray-600 hover:bg-white/50 hover:text-brand-600' : 'text-gray-700 hover:bg-white/80 hover:text-brand-600'
+                    : showProminentNav ? 'text-gray-600 hover:bg-white/50 hover:text-brand-600' : 'text-gray-700 hover:bg-white/80 hover:text-brand-600'
                 }`}
               >
                 {item.label}
@@ -69,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
 
             <button
               onClick={() => handleNavClick('admin')}
-              className={`p-2 rounded-full transition-colors ${scrolled ? 'text-gray-400 hover:text-brand-600' : 'text-gray-500 hover:text-brand-700'}`}
+              className={`p-2 rounded-full transition-colors ${showProminentNav ? 'text-gray-400 hover:text-brand-600' : 'text-gray-500 hover:text-brand-700'}`}
               title="Yönetici Paneli"
             >
               <UserCog size={20} />
