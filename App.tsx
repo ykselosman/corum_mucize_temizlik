@@ -19,8 +19,23 @@ function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
 
+  // SEO: Dynamic Page Titles
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    let title = "Mucize Temizlik | Çorum Profesyonel Temizlik Hizmetleri";
+    switch (currentPage) {
+      case 'services': title = "Hizmetlerimiz | Çorum Ev ve Ofis Temizliği - Mucize Temizlik"; break;
+      case 'about': title = "Hakkımızda | Mucize Temizlik Çorum'un Hijyen Markası"; break;
+      case 'contact': title = "İletişim | Çorum Temizlik Şirketi Telefon ve Adres"; break;
+      case 'booking': title = "Online Randevu | Çorum Temizlik Hizmeti Al"; break;
+      case 'quote': title = "Fiyat Teklifi Al | Çorum Temizlik Fiyatları"; break;
+      case 'service-detail': 
+        if (selectedService) title = `${selectedService.title} | Çorum Profesyonel Temizlik`;
+        break;
+      case 'admin': title = "Yönetici Paneli | Mucize Temizlik"; break;
+    }
+    document.title = title;
   }, [currentPage, selectedService]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -110,7 +125,6 @@ function App() {
     }
   };
 
-  // Special full-screen layout for Admin
   if (currentPage === 'admin') {
     return renderPage();
   }

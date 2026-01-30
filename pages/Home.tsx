@@ -64,7 +64,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
 
             <div className="lg:w-1/2 relative animate-fade-in">
               <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white transform rotate-2 hover:rotate-0 transition-transform duration-700">
-                <img src="https://lh3.googleusercontent.com/d/1FMJFWT4EK_A7E17lvg_3GJx4i41gRsWy" alt="Professional Cleaning" className="w-full h-auto object-cover" />
+                <img src="https://lh3.googleusercontent.com/d/1FMJFWT4EK_A7E17lvg_3GJx4i41gRsWy" alt="Çorum Profesyonel Temizlik - Mucize Temizlik" className="w-full h-auto object-cover" />
                 <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-white/50 animate-float-delayed">
                    <div className="flex items-center gap-3">
                       <div className="bg-green-100 p-2 rounded-full text-green-600"><ShieldCheck size={24} /></div>
@@ -81,7 +81,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
         </div>
       </section>
 
-      {/* restored: Services Section */}
+      {/* Services Section */}
       <section className="py-24 bg-gray-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
@@ -101,7 +101,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
               >
                 <div className="relative h-64 overflow-hidden">
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors z-10"></div>
-                  <img src={service.image} alt={service.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                  <img src={service.image} alt={`${service.title} - Çorum Temizlik`} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-lg border border-gray-100 flex items-center gap-2">
                      <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Başlangıç</span>
                      <span className="text-brand-600 font-bold">₺{service.basePrice}</span>
@@ -145,7 +145,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
                 { before: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=800&q=80', after: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?auto=format&fit=crop&w=800&q=80', label: 'Banyo Dezenfeksiyonu' }
               ].map((item, idx) => (
                 <div key={idx} className="relative group rounded-3xl overflow-hidden shadow-xl h-80">
-                   <img src={item.after} className="absolute inset-0 w-full h-full object-cover" alt="After" />
+                   <img src={item.after} className="absolute inset-0 w-full h-full object-cover" alt={`${item.label} Sonrası`} />
                    <div className="absolute inset-0 w-full h-full object-cover animate-[reveal_4s_infinite_alternate]" style={{ clipPath: 'inset(0 50% 0 0)', backgroundImage: `url(${item.before})`, backgroundSize: 'cover' }}></div>
                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-full font-bold text-brand-600 shadow-lg">{item.label}</div>
@@ -158,7 +158,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
         </div>
       </section>
 
-      {/* restored: Why Us? - Animated Features */}
+      {/* Why Us? */}
       <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -189,7 +189,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
              </div>
              <div className="relative animate-fade-in" style={{ animationDelay: '0.4s' }}>
                 <div className="absolute inset-0 bg-brand-500 rounded-[2rem] rotate-6 opacity-20 blur-2xl"></div>
-                <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Cleaning worker" className="relative rounded-[2rem] shadow-2xl border-4 border-gray-800" />
+                <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Mucize Temizlik Personeli" className="relative rounded-[2rem] shadow-2xl border-4 border-gray-800" />
                 <div className="absolute -bottom-10 -left-10 bg-white p-6 rounded-2xl shadow-xl text-gray-900 max-w-xs animate-float">
                    <div className="flex items-center gap-2 mb-2">
                       <div className="text-yellow-400 flex"><Star fill="currentColor" size={20}/><Star fill="currentColor" size={20}/><Star fill="currentColor" size={20}/><Star fill="currentColor" size={20}/><Star fill="currentColor" size={20}/></div>
@@ -259,7 +259,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onServiceClick }) => {
         </div>
       </section>
 
-      {/* restored: CTA Section */}
+      {/* CTA Section */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-brand-600 to-teal-500"></div>
         <div className="absolute inset-0 opacity-20">
